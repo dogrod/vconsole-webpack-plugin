@@ -1,12 +1,13 @@
-# vconsole-webpack-plugin
-webpack plugin for [vConsole](https://github.com/WechatFE/vConsole)
+# webpack-vconsole-plugin
 
-帮助开发者在移动端进行调试，本插件是在 [vConsole](https://github.com/WechatFE/vConsole) 的基础上封装的 `webpack` 插件，通过 `webpack` 配置即可自动添加 `vConsole` 调试功能，方便实用。
+> webpack plugin for [vConsole](https://github.com/WechatFE/vConsole), forked from vconsole-webpack-plugin
+>
+> 帮助开发者在移动端进行调试，本插件是在 [vConsole](https://github.com/WechatFE/vConsole) 的基础上封装的 `webpack` 插件，通过 `webpack` 配置即可自动添加 `vConsole` 调试功能，方便实用。
 
 ## 安装
 
 ```bash
-npm install vconsole-webpack-plugin --save-dev
+npm install webpack-vconsole-plugin --save-dev
 ```
 
 ## 使用
@@ -15,7 +16,7 @@ npm install vconsole-webpack-plugin --save-dev
 
 ```js
 // 引入插件
-var vConsolePlugin = require('vconsole-webpack-plugin'); 
+var vConsolePlugin = require('webpack-vconsole-plugin'); 
 
 module.exports = {
     ...
@@ -46,7 +47,7 @@ scripts: {
 
 ```js
 // 引入插件
-var vConsolePlugin = require('vconsole-webpack-plugin'); 
+var vConsolePlugin = require('webpack-vconsole-plugin'); 
 
 // 接收运行参数
 const argv = require('yargs')

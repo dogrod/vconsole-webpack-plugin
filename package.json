@@ -1,7 +1,7 @@
 {
-  "name": "vconsole-webpack-plugin",
+  "name": "webpack-vconsole-plugin",
   "version": "1.5.2",
-  "description": "webpack plugin for vConsole",
+  "description": "webpack plugin for vConsole, forked from vconsole-webpack-plugin",
   "main": "index.js",
   "scripts": {
     "lint": "eslint index.js",
@@ -30,5 +30,8 @@
   "devDependencies": {
     "eslint": "^3.3.0",
     "eslint-config-jr": "^1.0.0"
+  },
+  "peerDependencies": {
+    "webpack": "^4.0.0 || ^5.0.0"
   }
 }
