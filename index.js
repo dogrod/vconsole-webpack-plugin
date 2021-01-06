@@ -1,111 +1,131 @@
 /**
  * webpack plugin for vConsole
- *
- * @author diamont1001<diamont1001@163.com>
- * @sea http://webpack.github.io/docs/plugins.html
+ * 
+ * @see http://webpack.github.io/docs/plugins.html
  */
 
-'use strict';
+"use strict";
 
-const path = require('path');
-const fs = require('fs');
+const webpack = require("webpack");
+const path = require("path");
+const fs = require("fs");
 
+/**
+ * prependEntry Method for webpack 4+
+ * @param {Entry} originalEntry
+ * @param {Entry} additionalEntries
+ * @param {Array<string>} filter
+ * @returns {Entry}
+ * Fork from https://github.com/webpack/webpack-dev-server/blob/master/lib/utils/DevServerPlugin.js
+ */
+const prependEntry = (originalEntry, additionalEntries, filter) => {
+  if (typeof originalEntry === "function") {
+    return () =>
+      Promise.resolve(originalEntry()).then((entry) =>
+        prependEntry(entry, additionalEntries, filter)
+      );
+  }
 
-function vConsolePlugin(options) {
-    this.options = Object.assign({
-        filter: [],
-        enable: false // 插件开关，默认“关”
-    }, options);
-    if (typeof this.options.filter === 'string') {
-        this.options.filter = [this.options.filter];
-    }
-}
+  if (typeof originalEntry === "object" && !Array.isArray(originalEntry)) {
+    /** @type {Object<string,string>} */
+    const clone = {};
 
-vConsolePlugin.prototype.apply = function(compiler) {
-    const enable = this.options.enable;
-    let pathVconsole = 'vconsole-webpack-plugin/src/vconsole.js';
-    const _root = module.parent.paths.find(item => {
-        let tmpPathVconsole = path.join(item, 'vconsole-webpack-plugin/src/vconsole.js');
-        if (fs.existsSync(item) && fs.existsSync(tmpPathVconsole)) {
-            pathVconsole = tmpPathVconsole;
-            return true;
-        }
-        return false;
+    Object.keys(originalEntry).forEach((key) => {
+      if (!checkFilter(entry[key], filter)) {
+        // entry[key] should be a string here
+        const entryDescription = originalEntry[key];
+        clone[key] = prependEntry(entryDescription, additionalEntries, filter);
+      }
     });
-    const that = this;
 
-    const pluginFunction = (local, entry) => {
-        if (enable) {
-            if (typeof entry === 'string') {
-                if (!checkFilter([entry], that.options.filter)) {
-                    // TODO: entry 为 string 时，修改不了，只有 object 才可以修改
-                    entry = [pathVconsole, entry];
-                    console.warn('[vconsole-webpack-plugin] 暂不支持 entry 为 string 类型的情况\n');
-                }
-            } else if (Object.prototype.toString.call(entry) === '[object Array]') {
-                if (!checkFilter(entry, that.options.filter)) {
-                    entry.unshift(pathVconsole);
-                }
-            } else if (typeof entry === 'object') {
-                for (let key in entry) {
-                    if (that.options.filter.indexOf(key) < 0) {
-                        if (Object.prototype.toString.call(entry[key]) === '[object Array]') {
-                            if (!checkFilter(entry[key], that.options.filter)) {
-                                entry[key].unshift(pathVconsole);
-                            }
-                        } else if (typeof entry[key] === 'string') {
-                            if (!checkFilter([entry[key]], that.options.filter)) {
-                                entry[key] = [pathVconsole, entry[key]];
-                            }
-                        }
-                    }
-                }
-            }
+    return clone;
+  }
 
-            // console.log(entry);
-        }
+  // in this case, entry is a string or an array.
+  // make sure that we do not add duplicates.
+  /** @type {Entry} */
+  const entriesClone = additionalEntries.slice(0);
+  [].concat(originalEntry).forEach((newEntry) => {
+    if (!entriesClone.includes(newEntry)) {
+      entriesClone.push(newEntry);
     }
-
-    if (compiler.hooks) {
-        // console.log('it is webpack 4');
-        compiler.hooks.entryOption.tap({ name: 'vConsolePlugin' }, pluginFunction);
-    } else {
-        // console.log('it is not webpack 4');
-        compiler.plugin('entry-option', pluginFunction);
-    }
+  });
+  return entriesClone;
 };
 
-function checkFilter(entries, filter) {
-    for (var i = 0; i < entries.length; i++) {
-        // 去重，避免两次初始化 vconsole
-        if (!fs.existsSync(entries[i])) { // 处理 webpack-dev-server 开启的情况
-            continue;
-        }
-        const data = codeClean((fs.readFileSync(entries[i]) || '').toString());
-        if (data.toLowerCase().indexOf('new vconsole(') >= 0
-            || data.indexOf('new require(\'vconsole') >= 0
-            || data.indexOf('new require("vconsole') >= 0
-            ) {
-            return true;
-        }
-
-        // 过滤黑名单
-        for (var j = 0; j < filter.length; j++) {
-            if (filter[j] === entries[i]) {
-                return true;
-            }
-        }
+class vConsolePlugin {
+  constructor(options) {
+    this.options = Object.assign(
+      {
+        filter: [],
+        enable: false, // 插件开关，默认“关”
+      },
+      options
+    );
+    if (typeof this.options.filter === "string") {
+      this.options.filter = [this.options.filter];
     }
-    return false;
+  }
+
+  apply(compiler) {
+    // TODO: support filter options
+    const enable = this.options.enable;
+    const filter = this.options.filter;
+
+    if (enable) {
+      let pathVconsole = "webpack-vconsole-plugin/src/vconsole.js";
+      const additionalEntries = [pathVconsole];
+
+      const compilerOptions = compiler.options;
+
+      compilerOptions.entry = prependEntry(
+        compilerOptions.entry || "./src",
+        additionalEntries,
+        filter
+      );
+      compiler.hooks.entryOption.call(
+        compilerOptions.context,
+        compilerOptions.entry
+      );
+    }
+  }
 }
 
-// 去除注释
+function checkFilter(entries, filter) {
+  for (var i = 0; i < entries.length; i++) {
+    // 去重，避免两次初始化 vconsole
+    if (!fs.existsSync(entries[i])) {
+      // 处理 webpack-dev-server 开启的情况
+      continue;
+    }
+    const data = codeClean((fs.readFileSync(entries[i]) || "").toString());
+    if (
+      data.toLowerCase().indexOf("new vconsole(") >= 0 ||
+      data.indexOf("new require('vconsole") >= 0 ||
+      data.indexOf('new require("vconsole') >= 0
+    ) {
+      return true;
+    }
+
+    // 过滤黑名单
+    for (var j = 0; j < filter.length; j++) {
+      if (filter[j] === entries[i]) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * remove comment
+ */
 function codeClean(str) {
-    var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
-    // console.log(str.match(reg));
-    return str.replace(reg, function(word) { // 去除注释后的文本  
-        return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? '' : word;  
-    });
+  var reg = /("([^\\\"]*(\\.)?)*")|('([^\\\']*(\\.)?)*')|(\/{2,}.*?(\r|\n))|(\/\*(\n|.)*?\*\/)/g;
+  return str.replace(reg, function (word) {
+    // 去除注释后的文本
+    return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
+  });
 }
 
 module.exports = vConsolePlugin;
