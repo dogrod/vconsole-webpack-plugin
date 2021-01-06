@@ -31,7 +31,7 @@ const prependEntry = (originalEntry, additionalEntries, filter) => {
     const clone = {};
 
     Object.keys(originalEntry).forEach((key) => {
-      if (!checkFilter(entry[key], filter)) {
+      if (!checkFilter(originalEntry[key], filter)) {
         // entry[key] should be a string here
         const entryDescription = originalEntry[key];
         clone[key] = prependEntry(entryDescription, additionalEntries, filter);
