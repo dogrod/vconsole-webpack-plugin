@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/diamont1001/vconsole-webpack-plugin.git"
+    "url": "git+https://github.com/dogrod/webpack-vconsole-plugin.git"
   },
   "keywords": [
     "webpack",
@@ -21,9 +21,9 @@
   "author": "diamont1001",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/diamont1001/vconsole-webpack-plugin/issues"
+    "url": "https://github.com/dogrod/webpack-vconsole-plugin/issues"
   },
-  "homepage": "https://github.com/diamont1001/vconsole-webpack-plugin#readme",
+  "homepage": "https://github.com/dogrod/webpack-vconsole-plugin#readme",
   "dependencies": {
     "vconsole": "^3.3.4"
   },
